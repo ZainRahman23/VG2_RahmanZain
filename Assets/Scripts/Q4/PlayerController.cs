@@ -1,56 +1,123 @@
-using UnityEngine;
-using UnityEngine.InputSystem;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.InputSystem;
+using UnityEngine;
 
+namespace FPS {
+    public class PlayerController : MonoBehaviour
+    {
+        public static PlayerController instance;
+        
+        // Outlets
+        public Transform povOrigin;
+        public Transform projectileOrigin;
+        public GameObject projectilePrefab;
+        
+        // Configuration
+        public float attackRange;
 
-namespace FPS
-{
-    public class PlayerController : MonoBehaviour
-    {
-        public static PlayerController instance;
+        // State Tracking
+        public List<int> keyIdsObtained;
 
-        // State Tracking
-        public List<int> keyIdsObtained;
+        // Methods
+        void Awake()
+        {
+            instance = this;
+            keyIdsObtained = new List<int>();
+        }
 
-        // Methods
-        void Awake() {
-            instance = this;
-            keyIdsObtained = new List<int>();
-        }
+        // Update is called once per frame
+        // void Update()
+        // {
+        //     Keyboard keyboardInput = Keyboard.current;
+        //     Mouse mouseInput = Mouse.current;
+        //     if (keyboardInput != null && mouseInput != null) {
+        //
+        //         // E KEY Interactions
+        //         if (keyboardInput.eKey.wasPressedThisFrame) {
+        //             Vector2 mousePosition = mouseInput.position.ReadValue();
+        //
+        //             Ray ray = Camera.main.ScreenPointToRay(mousePosition);
+        //             RaycastHit hit;
+        //
+        //             if (Physics.Raycast(ray, out hit, 2f)) {
+        //                 // Debug: Test first-person interactions
+        //                 print("Interacted with " + hit.transform.name + " from " + hit.distance + "m.");
+        //
+        //                 // Doors
+        //                 Door targetDoor = hit.transform.GetComponent<Door>();
+        //                 if (targetDoor) {
+        //                     targetDoor.Interact();
+        //                 }
+        //
+        //                 // Buttons
+        //                 InteractButton targetButton = hit.transform.GetComponent<InteractButton>();
+        //                 if (targetButton != null) { 
+        //                     targetButton.Interact();
+        //                 }
+        //             }
+        //         }
+        //         
+        //         // Left Mouse Interactions
+        //         if (mouseInput.leftButton.wasPressedThisFrame)
+        //         {
+        //             PrimaryAttack();
+        //         }
+        //         
+        //         // Right Mouse Interactions
+        //         if (mouseInput.rightButton.wasPressedThisFrame)
+        //         {
+        //             SecondaryAttack();
+        //         }
+        //     }
+        //
+        // }
 
+        void OnPrimaryAttack()
+        {
+            RaycastHit hit;
+            bool hitSomething = Physics.Raycast(povOrigin.position, povOrigin.forward, out hit, attackRange);
+            if (hitSomething)
+            {
+                Rigidbody targetRigidbody = hit.transform.GetComponent<Rigidbody>();
+                if (targetRigidbody)
+                {
+                    targetRigidbody.AddForce(povOrigin.forward * 100f, ForceMode.Impulse);
+                }
+            }
+        }
 
-        void Update() {
-            Keyboard keyboardInput = Keyboard.current;
-            Mouse mouseInput = Mouse.current;
-            if(keyboardInput != null && mouseInput != null) {
-                // E KEY Interactions
-                if(keyboardInput.eKey.wasPressedThisFrame) {
-                    Vector2 mousePosition = mouseInput.position.ReadValue();
+        void OnSecondaryAttack()
+        {
+            GameObject projectile = Instantiate(projectilePrefab,
+                projectileOrigin.position,
+                Quaternion.LookRotation(povOrigin.forward));
+            projectile.transform.localScale = Vector3.one * 5f;
+            projectile.GetComponent<Rigidbody>().AddForce(povOrigin.forward * 25f, ForceMode.Impulse);
+        }
 
-                    Ray ray = Camera.main.ScreenPointToRay(mousePosition);
-                    RaycastHit hit;
-                    if(Physics.Raycast(ray, out hit, 2f)) {
-                        // Debug: Test first-person interactions
-                        print("Interacted with " + hit.transform.name + " from " + hit.distance + "m.");
-
-                        // Doors
-                        Door targetDoor = hit.transform.GetComponent<Door>();
-                        if (targetDoor)
-                        {
-                            targetDoor.Interact();
-                        }
-
-                        // Buttons
-                        InteractButton targetButton = hit.transform.GetComponent<InteractButton>();
-                        if (targetButton != null)
-                        {
-                            targetButton.Interact();
-                        }
-
-                    }
-                }
-            }
-        }
-
-    }
+        void OnInteract()
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(povOrigin.position, povOrigin.forward, out hit, 2f))
+            {
+                // Debug: Test first-person interactions
+                // print("Interacted with " + hit.transform.name + " from " + hit.distance + "m.");
+                
+                // Doors
+                Door targetDoor = hit.transform.GetComponent<Door>();
+                if (targetDoor)
+                {
+                    targetDoor.Interact();
+                }
+                
+                // Buttons
+                InteractButton targetButton = hit.transform.GetComponent<InteractButton>();
+                if (targetButton != null)
+                {
+                    targetButton.Interact();
+                }
+            }
+        }
+    }
 }
